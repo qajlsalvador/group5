@@ -1,51 +1,54 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import streamlit as st
-from streamlit.logger import get_logger
-
-LOGGER = get_logger(__name__)
-
-
-def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
-
-    st.write("# Welcome to Streamlit! 👋")
-
-    st.sidebar.success("Select a demo above.")
-
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+import tensorflow as tf
+import numpy as np
+from PIL import Image
 
 
-if __name__ == "__main__":
-    run()
+st.set_option('deprecation.showfileUploaderEncoding', False)
+
+@st.cache(allow_output_mutation=True)
+def load_model():
+	model = tf.keras.models.load_model('./flower_model_trained.hdf5')
+	return model
+
+
+def predict_class(image, model):
+
+	image = tf.cast(image, tf.float32)
+	image = tf.image.resize(image, [180, 180])
+
+	image = np.expand_dims(image, axis = 0)
+
+	prediction = model.predict(image)
+
+	return prediction
+
+
+model = load_model()
+st.title('Flower Classifier')
+
+file = st.file_uploader("Upload an image of a flower", type=["jpg", "png"])
+
+
+if file is None:
+	st.text('Waiting for upload....')
+
+else:
+	slot = st.empty()
+	slot.text('Running inference....')
+
+	test_image = Image.open(file)
+
+	st.image(test_image, caption="Input Image", width = 400)
+
+	pred = predict_class(np.asarray(test_image), model)
+
+	class_names = ['daisy', 'dandelion', 'rose', 'sunflower', 'tulip']
+
+	result = class_names[np.argmax(pred)]
+
+	output = 'The image is a ' + result
+
+	slot.text('Done')
+
+	st.success(output)
