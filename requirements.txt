@@ -1,5 +1,7 @@
 altair
+tensorflow
 numpy
 pandas
+Pillow
 pydeck
 streamlit
